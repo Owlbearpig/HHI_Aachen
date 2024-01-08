@@ -10,6 +10,7 @@ from teval.functions import phase_correction, window, do_fft, f_axis_idx_map, do
 from tmm import coh_tmm as coh_tmm_full
 from tmm_slim import coh_tmm
 from scipy.optimize import shgo
+# from teval import conductivity
 from conductivity_eval import conductivity
 
 
@@ -35,7 +36,7 @@ def main():
     # path_ = Path("/home/ftpuser/ftp/Data/HHI_Aachen/sample3/img1")
 
     path_ = Path(f"E:\measurementdata\HHI_Aachen\sample{sample_idx}\img1")
-    path_ = Path(f"/home/ftpuser/ftp/Data/HHI_Aachen/sample{sample_idx}/img1")
+    # path_ = Path(f"/home/ftpuser/ftp/Data/HHI_Aachen/sample{sample_idx}/img1")
 
     if sample_idx == 3:
         options = {"cbar_min": 1, "cbar_max": 3.0}
@@ -43,15 +44,17 @@ def main():
         options = {"cbar_min": 0.05, "cbar_max": 0.21, "color_map": "viridis"}
         # options = {"cbar_min": 0.4, "cbar_max": 0.6, "color_map": "viridis"}
         options = {"cbar_min": 10, "cbar_max": 100, "color_map": "viridis"}
+        options = {"cbar_min": 0, "cbar_max": 15, "color_map": "viridis"}
     else:
         options = {"cbar_min": 1, "cbar_max": 3.0, "log_scale": True}
         options = {"cbar_min": 0, "cbar_max": 0.015}
         options = {"cbar_min": 0, "cbar_max": 1.5}
         options = {"cbar_min": 0.05, "cbar_max": 0.21, "color_map": "viridis"}
         options = {"cbar_min": 10, "cbar_max": 400, "color_map": "viridis"}
+        options = {"cbar_min": 0, "cbar_max": 15, "color_map": "viridis"}
 
     img = Image(path_, options=options, sample_idx=sample_idx)
-    # img.plot_image()
+    img.plot_image()
     point = (35.5, -4)
     # img.plot_point(*point)
     # img.plot_image(quantity="conductivity", selected_freq=2.000)
@@ -60,11 +63,15 @@ def main():
 
     # thickness_analysis(path_, sample_idx)
     res = conductivity(img, point)
-    n = res["sigma"]
+    if isinstance(res, dict):
+        n = res["n"]
+    else:
+        n = res
 
-    plt.figure("sigma")
-    plt.plot(n[:, 0].real, n[:, 1].real, label="sigma real")
-    plt.plot(n[:, 0].real, n[:, 1].imag, label="sigma imag")
+    plt.figure("n")
+    plt.plot(n[:, 0].real, n[:, 1].real, label="n real")
+    plt.plot(n[:, 0].real, n[:, 1].imag, label="n imag")
+    # plt.ylim((0, 0.02))
 
     for fig_label in plt.get_figlabels():
         plt.figure(fig_label)
