@@ -41,17 +41,23 @@ def sub_refidx(img_, point=(22.5, 5)):
 
 
 def conductivity(img_, measurement_, d_film_=None):
-    en_plot_ = False
+    en_plot_ = True
     sub_point = (22, -4)
 
-    if d_film_ is None:
-        d_film = 0.400
+    if "sample3" in str(img_.data_path):
+        d_film = 0.350
+    elif "sample4" in str(img_.data_path):
+        d_film = 0.250
     else:
         d_film = d_film_
 
     n_sub = sub_refidx(img_, point=sub_point)
+    n_sub[:, 1] = 1.99*np.ones_like(n_sub[:, 1]) + 1j*0.013 * np.ones_like(n_sub[:, 1])
 
     shgo_bounds = [(1, 100), (1, 100)]
+
+    if isinstance(measurement_, tuple):
+        measurement_ = img_.get_measurement(*measurement_)
 
     film_td = measurement_.get_data_td()
     film_ref_td = img_.get_ref(both=False, point=measurement_.position)
