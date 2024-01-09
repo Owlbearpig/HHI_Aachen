@@ -52,8 +52,8 @@ def sub_refidx_tmm(img_, point):
 
     sam_td[:, 0] -= sam_td[0, 0]
 
-    #sam_td = window(sam_td, en_plot=False)
-    #ref_td = window(ref_td, en_plot=False)
+    # sam_td = window(sam_td, en_plot=False, win_len=10)
+    # ref_td = window(ref_td, en_plot=False, win_len=10)
 
     ref_fd, sam_fd = do_fft(ref_td), do_fft(sam_td)
     phi = np.angle(sam_fd[:, 1] / ref_fd[:, 1])
@@ -208,7 +208,7 @@ def sub_refidx_tmm(img_, point):
 
 def conductivity(img_, measurement_, d_film_=None):
     en_plot_ = True
-    sub_point = (22, 0)
+    sub_point = (22, -10)
 
     if "sample3" in str(img_.data_path):
         d_film = 0.350
@@ -222,7 +222,7 @@ def conductivity(img_, measurement_, d_film_=None):
         n_sub = n_sub["n"]
     # n_sub = np.array([n_sub[:, 0].real, (1.948+0.014j) * np.ones_like(n_sub[:, 1])]).T
     # return n_sub
-    # n_sub[:, 1] = 1.99*np.ones_like(n_sub[:, 1]) + 1j*0.013 * np.ones_like(n_sub[:, 1])
+    # n_sub[:, 1].real = 1.95*np.ones_like(n_sub[:, 1]).real
 
     shgo_bounds = [(1, 100), (1, 100)]
 
@@ -232,18 +232,19 @@ def conductivity(img_, measurement_, d_film_=None):
     film_td = measurement_.get_data_td()
     film_ref_td = img_.get_ref(both=False, point=measurement_.position)
 
-    #film_td = window(film_td, win_len=16, shift=0, en_plot=False, slope=0.99)
-    #film_ref_td = window(film_ref_td, win_len=16, shift=0, en_plot=False, slope=0.99)
+    film_td = window(film_td, win_len=40, shift=0, en_plot=False, slope=1)
+    film_ref_td = window(film_ref_td, win_len=40, shift=0, en_plot=False, slope=1)
 
     film_td[:, 0] -= film_td[0, 0]
     film_ref_td[:, 0] -= film_ref_td[0, 0]
 
     film_ref_fd, film_fd = do_fft(film_ref_td), do_fft(film_td)
 
-    # film_ref_fd = phase_correction(film_ref_fd, fit_range=(0.1, 0.2), ret_fd=True, en_plot=False)
-    # film_fd = phase_correction(film_fd, fit_range=(0.1, 0.2), ret_fd=True, en_plot=False)
+    #film_ref_fd = phase_correction(film_ref_fd, fit_range=(0.5, 1.6), ret_fd=True, en_plot=False, extrapolate=True)
+    #film_fd = phase_correction(film_fd, fit_range=(0.5, 1.6), ret_fd=True, en_plot=False, extrapolate=True)
 
     # phi = self.get_phase(point)
+    from teval.functions import unwrap
     phi = np.angle(film_fd[:, 1] / film_ref_fd[:, 1])
 
     freqs = film_ref_fd[:, 0].real
@@ -350,6 +351,7 @@ def conductivity(img_, measurement_, d_film_=None):
 
         t_tmm = calc_model(n_opt, ret_t=True)
         phi_tmm = np.angle(t_tmm)
+
         plt.figure("Phase coated")
         plt.title("Phases coated")
         plt.plot(freqs[plot_range1], phi[plot_range1], label="Measured", linewidth=2)
