@@ -2,11 +2,23 @@ import numpy as np
 from numpy import pi
 from scipy.constants import epsilon_0
 from teval.functions import phase_correction, window, do_fft, f_axis_idx_map, do_ifft, to_db
-from teval.consts import c_thz, THz, plot_range1
+from teval.consts import c_thz, THz, plot_range1, c0
 from tmm import coh_tmm as coh_tmm_full
 from tmm_slim import coh_tmm
 import matplotlib.pyplot as plt
 from scipy.optimize import shgo
+
+
+def plt_show():
+    for fig_label in plt.get_figlabels():
+        plt.figure(fig_label)
+        # save_fig(fig_label)
+        ax = plt.gca()
+        handles, labels = ax.get_legend_handles_labels()
+        if labels:
+            plt.legend()
+
+    plt.show()
 
 
 d_sub = 1000
@@ -15,12 +27,18 @@ angle_in = 0.0
 initial_shgo_iters = 3
 
 
+def interpolate_pulse(data_td):
+    pass
+
+
 def sub_refidx_a(img_, point):
-    #img_.plot_point(*point)
-    #plt.show()
+    # img_.plot_point(*point)
+    # plt.show()
     sub_meas = img_.get_measurement(*point)
     sam_td = sub_meas.get_data_td()
     ref_td = img_.get_ref(point=point)
+
+    plt_show()
 
     sam_td = window(sam_td, en_plot=False, slope=0.99)
     ref_td = window(ref_td, en_plot=False, slope=0.99)
@@ -28,7 +46,7 @@ def sub_refidx_a(img_, point):
     ref_fd, sam_fd = do_fft(ref_td), do_fft(sam_td)
 
     freqs = ref_fd[:, 0].real
-    omega = 2*np.pi*freqs
+    omega = 2 * np.pi * freqs
 
     phi_ref = phase_correction(ref_fd, fit_range=(0.1, 1.2))
     phi_sam = phase_correction(sam_fd, fit_range=(0.1, 1.2))
@@ -36,15 +54,15 @@ def sub_refidx_a(img_, point):
     phi_diff = phi_sam[:, 1] - phi_ref[:, 1]
 
     n0 = 1 + c_thz * phi_diff / (omega * d_sub)
-    k0 = -c_thz * np.log(np.abs(sam_fd[:, 1]/ref_fd[:, 1]) * (1+n0)**2 / (4*n0)) / (omega*d_sub)
+    k0 = -c_thz * np.log(np.abs(sam_fd[:, 1] / ref_fd[:, 1]) * (1 + n0) ** 2 / (4 * n0)) / (omega * d_sub)
 
-    return np.array([freqs, n0+1j*k0], dtype=complex).T
+    return np.array([freqs, n0 + 1j * k0], dtype=complex).T
 
 
 def sub_refidx_tmm(img_, point):
     en_plot = True
-    #img_.plot_point(*point)
-    #plt.show()
+    # img_.plot_point(*point)
+    # plt.show()
 
     sub_meas = img_.get_measurement(*point)
     sam_td = sub_meas.get_data_td()
@@ -62,7 +80,7 @@ def sub_refidx_tmm(img_, point):
 
     zero = np.zeros_like(freqs, dtype=complex)
     one = np.ones_like(freqs, dtype=complex)
-    omega = 2*np.pi*freqs
+    omega = 2 * np.pi * freqs
 
     f_opt_idx = f_axis_idx_map(freqs, freq_range)
 
@@ -126,8 +144,8 @@ def sub_refidx_tmm(img_, point):
         if freq > 1.7:
             bounds_ = [(1.965, 1.97), (0.007, 0.015)]
         n_sub_a_f_idx = n_sub_a[f_idx_, 1]
-        bounds_ = [(n_sub_a_f_idx.real-0.05, n_sub_a_f_idx.real+0.05),
-                   (n_sub_a_f_idx.imag-0.005, n_sub_a_f_idx.imag+0.005)]
+        bounds_ = [(n_sub_a_f_idx.real - 0.05, n_sub_a_f_idx.real + 0.05),
+                   (n_sub_a_f_idx.imag - 0.005, n_sub_a_f_idx.imag + 0.005)]
 
         cost_ = cost
         if freq <= 0.150:
@@ -185,8 +203,8 @@ def sub_refidx_tmm(img_, point):
         plt.xlabel("Time (ps)")
         plt.ylabel("Amplitude (arb. u.)")
 
-    #n_opt.real[:-29] = np.convolve(n_opt.real, np.ones(30) / 30, mode='valid')
-    #n_opt.imag[:-29] = np.convolve(n_opt.imag, np.ones(30) / 30, mode='valid')
+    # n_opt.real[:-29] = np.convolve(n_opt.real, np.ones(30) / 30, mode='valid')
+    # n_opt.imag[:-29] = np.convolve(n_opt.imag, np.ones(30) / 30, mode='valid')
 
     t_abs_meas = np.abs(sam_fd[:, 1] / ref_fd[:, 1])
     T, R = calc_model(n_opt, ret_T_and_R=True)
@@ -201,7 +219,7 @@ def sub_refidx_tmm(img_, point):
     t_abs_meas = t_abs_meas[f_opt_idx]
 
     ret = {"loss": res.fun, "sigma": sigma_ret, "epsilon_r": epsilon_r_ret, "n": n,
-           "t_abs": t_abs, "R": R, "t_abs_meas": t_abs_meas}
+           "t_abs": t_abs, "R": R, "t_abs_meas": t_abs_meas, "sam_fd": sam_fd, "ref_fd": ref_fd}
 
     return ret
 
@@ -218,9 +236,11 @@ def conductivity(img_, measurement_, d_film_=None):
     else:
         d_film = d_film_
 
-    n_sub = sub_refidx_tmm(img_, point=sub_point)
-    if isinstance(n_sub, dict):
-        n_sub = n_sub["n"]
+    ret_sub_eval = sub_refidx_tmm(img_, point=sub_point)
+    if isinstance(ret_sub_eval, dict):
+        n_sub = ret_sub_eval["n"]
+    else:
+        n_sub = ret_sub_eval
 
     # n_sub = np.array([n_sub[:, 0].real, (1.948+0.014j) * np.ones_like(n_sub[:, 1])]).T
     # return n_sub
@@ -230,7 +250,7 @@ def conductivity(img_, measurement_, d_film_=None):
 
     if isinstance(measurement_, tuple):
         measurement_ = img_.get_measurement(*measurement_)
-
+    print("Measurement file:", measurement_.filepath)
     film_td = measurement_.get_data_td()
     meas_pos = measurement_.position
     film_ref_td = img_.get_ref(both=False, point=(meas_pos[0], meas_pos[1]))
@@ -243,8 +263,8 @@ def conductivity(img_, measurement_, d_film_=None):
 
     film_ref_fd, film_fd = do_fft(film_ref_td), do_fft(film_td)
 
-    #film_ref_fd = phase_correction(film_ref_fd, fit_range=(0.5, 1.6), ret_fd=True, en_plot=False, extrapolate=True)
-    #film_fd = phase_correction(film_fd, fit_range=(0.5, 1.6), ret_fd=True, en_plot=False, extrapolate=True)
+    # film_ref_fd = phase_correction(film_ref_fd, fit_range=(0.5, 1.6), ret_fd=True, en_plot=False, extrapolate=True)
+    # film_fd = phase_correction(film_fd, fit_range=(0.5, 1.6), ret_fd=True, en_plot=False, extrapolate=True)
 
     # phi = self.get_phase(point)
     from teval.functions import unwrap
@@ -262,6 +282,17 @@ def conductivity(img_, measurement_, d_film_=None):
     phase_shift = np.exp(-1j * (d_sub + np.sum(d_film)) * omega / c_thz)
 
     # film_ref_interpol = self._ref_interpolation(measurement, selected_freq_=selected_freq_, ret_cart=True)
+
+    def tinkham_approx():
+        sub_sam_fd, sub_ref_fd = ret_sub_eval["sam_fd"], ret_sub_eval["ref_fd"]
+
+        T_sub = sub_sam_fd[:, 1] / sub_ref_fd[:, 1]
+        T_sam = film_fd[:, 1] / film_ref_fd[:, 1]
+
+        sigma_tink = 0.01 * (1 + n_sub[:, 1]) * epsilon_0 * c0 * (T_sub - T_sam) / (T_sam * d_film * 1e-6)
+        sigma_tink = 1 / (sigma_tink * d_film * 1e-4)
+
+        return np.array([freqs, sigma_tink], dtype=complex).T
 
     def calc_model(n_model, ret_t=False, ret_T_and_R=False):
         n_list_ = np.array([one, n_sub[:, 1], n_model, one], dtype=complex).T
@@ -390,7 +421,7 @@ def conductivity(img_, measurement_, d_film_=None):
         R = R[f_opt_idx]
         t_abs_meas = t_abs_meas[f_opt_idx]
 
-    ret = {"loss": res.fun, "sigma": sigma_ret, "epsilon_r": epsilon_r_ret, "n": n,
-           "t_abs": t_abs, "R": R, "t_abs_meas": t_abs_meas}
+    eval_res = {"loss": res.fun, "sigma": sigma_ret, "epsilon_r": epsilon_r_ret, "n": n,
+                "t_abs": t_abs, "R": R, "t_abs_meas": t_abs_meas, "tinkham": tinkham_approx()}
 
-    return ret
+    return eval_res
