@@ -208,7 +208,8 @@ def sub_refidx_tmm(img_, point):
 
 def conductivity(img_, measurement_, d_film_=None):
     en_plot_ = True
-    sub_point = (22, -10)
+    sub_point = (49, -5)
+    sub_point = (22, -5)
 
     if "sample3" in str(img_.data_path):
         d_film = 0.350
@@ -220,6 +221,7 @@ def conductivity(img_, measurement_, d_film_=None):
     n_sub = sub_refidx_tmm(img_, point=sub_point)
     if isinstance(n_sub, dict):
         n_sub = n_sub["n"]
+
     # n_sub = np.array([n_sub[:, 0].real, (1.948+0.014j) * np.ones_like(n_sub[:, 1])]).T
     # return n_sub
     # n_sub[:, 1].real = 1.95*np.ones_like(n_sub[:, 1]).real
@@ -230,10 +232,11 @@ def conductivity(img_, measurement_, d_film_=None):
         measurement_ = img_.get_measurement(*measurement_)
 
     film_td = measurement_.get_data_td()
-    film_ref_td = img_.get_ref(both=False, point=measurement_.position)
+    meas_pos = measurement_.position
+    film_ref_td = img_.get_ref(both=False, point=(meas_pos[0], meas_pos[1]))
 
-    film_td = window(film_td, win_len=40, shift=0, en_plot=False, slope=1)
-    film_ref_td = window(film_ref_td, win_len=40, shift=0, en_plot=False, slope=1)
+    # film_td = window(film_td, win_len=40, shift=0, en_plot=False, slope=1)
+    # film_ref_td = window(film_ref_td, win_len=40, shift=0, en_plot=False, slope=1)
 
     film_td[:, 0] -= film_td[0, 0]
     film_ref_td[:, 0] -= film_ref_td[0, 0]
