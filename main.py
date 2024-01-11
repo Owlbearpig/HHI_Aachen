@@ -31,7 +31,7 @@ def thickness_analysis(path_, sample_idx_, point_=(37, -6.5)):
 
 
 def main():
-    sample_idx = 4
+    sample_idx = 3
 
     # path_ = Path("/home/ftpuser/ftp/Data/HHI_Aachen/sample3/img1")
 
@@ -43,14 +43,14 @@ def main():
         # options = {"cbar_min": 0, "cbar_max": 0.030}
         # options = {"cbar_min": 0.05, "cbar_max": 0.21, "color_map": "viridis"}
         # options = {"cbar_min": 0.4, "cbar_max": 0.6, "color_map": "viridis"}
-        options = {"cbar_min": 10, "cbar_max": 60, "color_map": "viridis"}
+        options = {"cbar_min": 10, "cbar_max": 100, "color_map": "viridis"}
         # options = {"cbar_min": 0, "cbar_max": 15, "color_map": "viridis"}
     else:
         options = {"cbar_min": 1, "cbar_max": 3.0, "log_scale": True}
         options = {"cbar_min": 0, "cbar_max": 0.015}
         options = {"cbar_min": 0, "cbar_max": 1.5}
         # options = {"cbar_min": 0.05, "cbar_max": 0.21, "color_map": "viridis"}
-        options = {"cbar_min": 10, "cbar_max": 60, "color_map": "viridis"}
+        options = {"cbar_min": 10, "cbar_max": 40, "color_map": "viridis"}
         # options = {"cbar_min": -25, "cbar_max": 25, "color_map": "viridis"}
         # options = {"cbar_min": 9, "cbar_max": 12, "color_map": "viridis"}
 
@@ -67,14 +67,15 @@ def main():
     point = (35.0, 7.0)
     point = (38.5, -3.5)
     # point = (30.5, -8.5)  # works
+    point = (34.0, -3.5)
     # img.system_stability(selected_freq_=2.000)
     # img.plot_point(*point)
-    img.plot_image(quantity="conductivity", selected_freq=1.750)
+    img.plot_image(quantity="conductivity", selected_freq=2.000)
     # img.plot_image(quantity="meas_time_delta")
     # img.plot_image(quantity="power", selected_freq=(1.95, 2.05))
     # img.plot_image(quantity="amplitude_transmission", selected_freq=1.000)
 
-    # plt_show()
+    plt_show()
 
     # thickness_analysis(path_, sample_idx)
     res = conductivity(img, point)
