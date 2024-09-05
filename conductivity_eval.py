@@ -291,7 +291,7 @@ def conductivity(img_, measurement_, d_film_=None):
 
         sigma_tink = 0.01 * (1 + n_sub[:, 1]) * epsilon_0 * c0 * (T_sub - T_sam) / (T_sam * d_film * 1e-6)
         sigma_tink = 1 / (sigma_tink * d_film * 1e-4)
-
+        sigma_tink = (1 + n_sub[:, 1]) * epsilon_0 * c0 * (T_sub - T_sam) / (T_sam * d_film * 1e-6)
         return np.array([freqs, sigma_tink], dtype=complex).T
 
     def calc_model(n_model, ret_t=False, ret_T_and_R=False):

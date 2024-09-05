@@ -12,7 +12,7 @@ from tmm_slim import coh_tmm
 from scipy.optimize import shgo
 # from teval import conductivity
 from conductivity_eval import conductivity, plt_show
-
+from mpl_settings import mpl_style_params
 
 def thickness_analysis(path_, sample_idx_, point_=(37, -6.5)):
     img = Image(path_, sample_idx=sample_idx_)
@@ -36,26 +36,33 @@ def main():
     # path_ = Path("/home/ftpuser/ftp/Data/HHI_Aachen/sample3/img1")
 
     path_ = Path(f"E:\measurementdata\HHI_Aachen\sample{sample_idx}\img1")
-    path_ = Path(f"/home/ftpuser/ftp/Data/HHI_Aachen/sample{sample_idx}/img1")
+    path_ = Path(f"/home/ftpuser/ftp/Data/HHI_Aachen/remeasure_02_09_2024/sample{sample_idx}/linescan0")
+    # path_ = Path(f"/home/ftpuser/ftp/Data/HHI_Aachen/remeasure_02_09_2024/sample{sample_idx}/img2")
+
+    result_dir = Path(r"/home/alex/MEGA/AG/Projects/HHI_Aachen/Results")
+    rcParams = mpl_style_params({"savefig.directory": result_dir})
 
     if sample_idx == 3:
         options = {"cbar_min": 1, "cbar_max": 3.0}
         # options = {"cbar_min": 0, "cbar_max": 0.030}
         # options = {"cbar_min": 0.05, "cbar_max": 0.21, "color_map": "viridis"}
         # options = {"cbar_min": 0.4, "cbar_max": 0.6, "color_map": "viridis"}
-        options = {"cbar_min": 10, "cbar_max": 100, "color_map": "viridis"}
+        options = {"cbar_min": 1, "cbar_max": 20, "color_map": "viridis"}
         # options = {"cbar_min": 0, "cbar_max": 15, "color_map": "viridis"}
     else:
         options = {"cbar_min": 1, "cbar_max": 3.0, "log_scale": True}
         options = {"cbar_min": 0, "cbar_max": 0.015}
         options = {"cbar_min": 0, "cbar_max": 1.5}
         # options = {"cbar_min": 0.05, "cbar_max": 0.21, "color_map": "viridis"}
-        options = {"cbar_min": 10, "cbar_max": 40, "color_map": "viridis"}
+        options = {"color_map": "viridis", "selected_freq": (2, 3), "rcParams": rcParams}
         # options = {"cbar_min": -25, "cbar_max": 25, "color_map": "viridis"}
         # options = {"cbar_min": 9, "cbar_max": 12, "color_map": "viridis"}
 
     img = Image(path_, options=options, sample_idx=sample_idx)
-    # img.plot_image()
+    img.plot_image(quantity="p2p")
+    img.knife_edge(y=0, coord_slice=(25, 40))
+    plt_show()
+    exit()
     # point = (31.0, 4)
     point = (30.0, -8.5)  # doesnt work
     point = (38.0, 0.5)  # doesnt work
@@ -68,14 +75,15 @@ def main():
     point = (38.5, -3.5)
     # point = (30.5, -8.5)  # works
     point = (34.0, -3.5)
+    point = (25.0, 5.0)
     # img.system_stability(selected_freq_=2.000)
-    # img.plot_point(*point)
-    img.plot_image(quantity="conductivity", selected_freq=2.000)
+    img.plot_point(*point)
+    # img.plot_image(quantity="conductivity", selected_freq=2.000)
     # img.plot_image(quantity="meas_time_delta")
     # img.plot_image(quantity="power", selected_freq=(1.95, 2.05))
     # img.plot_image(quantity="amplitude_transmission", selected_freq=1.000)
 
-    plt_show()
+    # plt_show()
 
     # thickness_analysis(path_, sample_idx)
     res = conductivity(img, point)
