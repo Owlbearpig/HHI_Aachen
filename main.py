@@ -36,8 +36,8 @@ def main():
     # path_ = Path("/home/ftpuser/ftp/Data/HHI_Aachen/sample3/img1")
 
     path_ = Path(f"E:\measurementdata\HHI_Aachen\sample{sample_idx}\img1")
-    path_ = Path(f"/home/ftpuser/ftp/Data/HHI_Aachen/remeasure_02_09_2024/sample{sample_idx}/linescan0")
-    # path_ = Path(f"/home/ftpuser/ftp/Data/HHI_Aachen/remeasure_02_09_2024/sample{sample_idx}/img2")
+    path_ = Path(f"/home/ftpuser/ftp/Data/HHI_Aachen/remeasure_02_09_2024/sample{sample_idx}/img3")
+    # path_ = Path(f"/home/ftpuser/ftp/Data/HHI_Aachen/remeasure_02_09_2024/sample{sample_idx}/img1")
 
     result_dir = Path(r"/home/alex/MEGA/AG/Projects/HHI_Aachen/Results")
     rcParams = mpl_style_params({"savefig.directory": result_dir})
@@ -54,15 +54,17 @@ def main():
         options = {"cbar_min": 0, "cbar_max": 0.015}
         options = {"cbar_min": 0, "cbar_max": 1.5}
         # options = {"cbar_min": 0.05, "cbar_max": 0.21, "color_map": "viridis"}
-        options = {"color_map": "viridis", "selected_freq": (2, 3), "rcParams": rcParams}
         # options = {"cbar_min": -25, "cbar_max": 25, "color_map": "viridis"}
         # options = {"cbar_min": 9, "cbar_max": 12, "color_map": "viridis"}
 
+    options = {"color_map": "viridis", "selected_freq": (0.9, 1.0), "rcParams": rcParams}
+
     img = Image(path_, options=options, sample_idx=sample_idx)
-    img.plot_image(quantity="p2p")
-    img.knife_edge(y=0, coord_slice=(25, 40))
-    plt_show()
-    exit()
+    # img.plot_image(quantity="p2p")
+    #opt_res = img.knife_edge(y=5, coord_slice=(25, 40))
+    #print(opt_res)
+    # plt_show()
+    # exit()
     # point = (31.0, 4)
     point = (30.0, -8.5)  # doesnt work
     point = (38.0, 0.5)  # doesnt work
@@ -78,12 +80,12 @@ def main():
     point = (25.0, 5.0)
     # img.system_stability(selected_freq_=2.000)
     img.plot_point(*point)
-    # img.plot_image(quantity="conductivity", selected_freq=2.000)
+    img.plot_image(quantity="conductivity", selected_freq=2.000)
     # img.plot_image(quantity="meas_time_delta")
     # img.plot_image(quantity="power", selected_freq=(1.95, 2.05))
     # img.plot_image(quantity="amplitude_transmission", selected_freq=1.000)
 
-    # plt_show()
+    plt_show()
 
     # thickness_analysis(path_, sample_idx)
     res = conductivity(img, point)
