@@ -60,7 +60,7 @@ def main():
     options = {"color_map": "viridis", "selected_freq": (0.9, 1.0), "rcParams": rcParams}
 
     img = Image(path_, options=options, sample_idx=sample_idx)
-    # img.plot_image(quantity="p2p")
+    img.plot_image(quantity="p2p")
     #opt_res = img.knife_edge(y=5, coord_slice=(25, 40))
     #print(opt_res)
     # plt_show()
@@ -77,10 +77,10 @@ def main():
     point = (38.5, -3.5)
     # point = (30.5, -8.5)  # works
     point = (34.0, -3.5)
-    point = (25.0, 5.0)
+    point = (40.0, 5.0)
     # img.system_stability(selected_freq_=2.000)
     img.plot_point(*point)
-    img.plot_image(quantity="conductivity", selected_freq=2.000)
+    # img.plot_image(quantity="conductivity", selected_freq=2.000)
     # img.plot_image(quantity="meas_time_delta")
     # img.plot_image(quantity="power", selected_freq=(1.95, 2.05))
     # img.plot_image(quantity="amplitude_transmission", selected_freq=1.000)
