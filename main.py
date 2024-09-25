@@ -11,8 +11,10 @@ from tmm import coh_tmm as coh_tmm_full
 from tmm_slim import coh_tmm
 from scipy.optimize import shgo
 # from teval import conductivity
-from conductivity_eval import conductivity, plt_show
+from conductivity_eval import conductivity
+from helpers import plt_show
 from mpl_settings import mpl_style_params
+
 
 def thickness_analysis(path_, sample_idx_, point_=(37, -6.5)):
     img = Image(path_, sample_idx=sample_idx_)
@@ -35,8 +37,8 @@ def main():
 
     # path_ = Path("/home/ftpuser/ftp/Data/HHI_Aachen/sample3/img1")
 
-    path_ = Path(f"E:\measurementdata\HHI_Aachen\sample{sample_idx}\img1")
-    path_ = Path(f"/home/ftpuser/ftp/Data/HHI_Aachen/remeasure_02_09_2024/sample{sample_idx}/img3")
+    path_ = Path(fr"E:\measurementdata\HHI_Aachen\remeasure_02_09_2024\sample{sample_idx}\img3")
+    # path_ = Path(f"/home/ftpuser/ftp/Data/HHI_Aachen/remeasure_02_09_2024/sample{sample_idx}/img3")
     # path_ = Path(f"/home/ftpuser/ftp/Data/HHI_Aachen/remeasure_02_09_2024/sample{sample_idx}/img1")
 
     result_dir = Path(r"/home/alex/MEGA/AG/Projects/HHI_Aachen/Results")
@@ -57,7 +59,8 @@ def main():
         # options = {"cbar_min": -25, "cbar_max": 25, "color_map": "viridis"}
         # options = {"cbar_min": 9, "cbar_max": 12, "color_map": "viridis"}
 
-    options = {"color_map": "viridis", "selected_freq": (0.9, 1.0), "rcParams": rcParams}
+    options = {"color_map": "viridis", "selected_freq": (0.9, 1.0), "rcParams": rcParams,
+               "cbar_min": 0, "cbar_max": 4}
 
     img = Image(path_, options=options, sample_idx=sample_idx)
     img.plot_image(quantity="p2p")
