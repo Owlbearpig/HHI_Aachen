@@ -1,5 +1,5 @@
 import logging
-
+from teval.measurements import Domain
 import numpy as np
 from numpy import pi
 from scipy.constants import epsilon_0
@@ -23,6 +23,7 @@ class Method(Enum):
 
 class ConductivityEval:
     options = {}
+
     def __init__(self, film_img_path, sub_img_path=None, options_dict=None):
         self.film_img = Image(film_img_path)
 
@@ -39,43 +40,34 @@ class ConductivityEval:
 
         default_options = {"d_sub": 1000,
                            "freq_range": (0.25, 2.5),
+                           "selected_freq": 1.00,
                            "angle_in": 0.0,
                            "init_shgo_iters": 3
                            }
 
         for k in default_options:
-            if not k in options_:
+            if k not in options_:
                 logging.warning(f"Setting {k} to default value {default_options[k]}")
                 options_[k] = default_options[k]
 
         self.options.update(default_options)
 
     def sub_refidx_a(self, point):
-        #img_.plot_point(*point)
-        #plt.show()
         d = self.options["d_sub"]
         res = self.sub_img.evaluate_point(point, d)
 
         return res["n"]
 
-    def sub_refidx_tmm(self, point, selected_freq_=None):
+    def sub_refidx_tmm(self, point):
         initial_shgo_iters = self.options["init_shgo_iters"]
         freq_range = self.options["freq_range"]
         d_sub = self.options["d_sub"]
         angle_in = self.options["angle_in"]
+        selected_freq = self.options["selected_freq"]
         en_plot = False
 
-        sam_meas = self.sub_img.get_measurement(*point)
-        ref_meas = self.sub_img.find_nearest_ref(sam_meas)
+        ref_td, sam_td, ref_fd, sam_fd = self.sub_img.get_measurement_pair(point, domain=Domain.Both)
 
-        ref_td, sam_td = ref_meas.get_data_td(), sam_meas.get_data_td()
-
-        sam_td[:, 0] -= sam_td[0, 0]
-
-        # sam_td = window(sam_td, en_plot=False, win_len=10)
-        # ref_td = window(ref_td, en_plot=False, win_len=10)
-
-        ref_fd, sam_fd = do_fft(ref_td), do_fft(sam_td)
         phi = np.angle(sam_fd[:, 1] / ref_fd[:, 1])
 
         freqs = ref_fd[:, 0].real
@@ -84,10 +76,10 @@ class ConductivityEval:
         one = np.ones_like(freqs, dtype=complex)
         omega = 2 * np.pi * freqs
 
-        if selected_freq_ is None:
+        if selected_freq is None:
             f_opt_idx = f_axis_idx_map(freqs, freq_range)
         else:
-            f_opt_idx = list(f_axis_idx_map(freqs, selected_freq_))
+            f_opt_idx = list(f_axis_idx_map(freqs, selected_freq))
 
         d_list = np.array([np.inf, d_sub, np.inf], dtype=float)
 
@@ -104,6 +96,7 @@ class ConductivityEval:
             for f_idx_, freq_ in enumerate(freqs):
                 if np.isclose(freq_, 0):
                     continue
+
                 lam_vac = c_thz / freq_
                 n = n_list_[f_idx_]
                 t_tmm_fd = coh_tmm_full("s", n, d_list, angle_in, lam_vac)["t"] * phase_shift[f_idx_]
@@ -256,7 +249,7 @@ class ConductivityEval:
         else:
             d_film = d_film_
 
-        sub_eval_res = self.sub_refidx_tmm(img_, point=sub_point, selected_freq_=selected_freq_)
+        sub_eval_res = self.sub_refidx_tmm(point=sub_point, selected_freq_=selected_freq_)
         n_sub = sub_eval_res["n"]
         sub_ref_fd = sub_eval_res["ref_fd"]
         sub_sam_fd = sub_eval_res["sam_fd"]
