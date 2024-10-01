@@ -3,7 +3,7 @@ from teval.measurements import Domain
 import numpy as np
 from numpy import pi
 from scipy.constants import epsilon_0
-from teval.functions import phase_correction, window, do_fft, f_axis_idx_map, do_ifft, to_db
+from teval.functions import phase_correction, plt_show, do_fft, f_axis_idx_map, do_ifft, to_db
 from teval.consts import c_thz, THz, plot_range1, c0
 from tmm import coh_tmm as coh_tmm_full
 from tmm_slim import coh_tmm
@@ -52,9 +52,9 @@ class ConductivityEval:
 
         self.options.update(default_options)
 
-    def sub_refidx_a(self, point):
+    def sub_refidx_a(self, point, en_plot=False):
         d = self.options["d_sub"]
-        res = self.sub_img.evaluate_point(point, d)
+        res = self.sub_img.evaluate_point(point, d, en_plot=en_plot)
 
         return res["n"]
 
@@ -66,7 +66,7 @@ class ConductivityEval:
         selected_freq = self.options["selected_freq"]
         en_plot = False
 
-        ref_td, sam_td, ref_fd, sam_fd = self.sub_img.get_measurement_pair(point, domain=Domain.Both)
+        ref_td, sam_td, ref_fd, sam_fd = self.sub_img.get_ref_sam_data(point, domain=Domain.Both)
 
         phi = np.angle(sam_fd[:, 1] / ref_fd[:, 1])
 
@@ -249,7 +249,7 @@ class ConductivityEval:
         else:
             d_film = d_film_
 
-        sub_eval_res = self.sub_refidx_tmm(point=sub_point, selected_freq_=selected_freq_)
+        sub_eval_res = self.sub_refidx_tmm(point=sub_point)
         n_sub = sub_eval_res["n"]
         sub_ref_fd = sub_eval_res["ref_fd"]
         sub_sam_fd = sub_eval_res["sam_fd"]
@@ -398,5 +398,9 @@ class ConductivityEval:
 
 
 if __name__ == '__main__':
-    # sub_img_p =
-    new_eval = ConductivityEval()
+    sub_img_p = r"/home/ftpuser/ftp/Data/HHI_Aachen/remeasure_02_09_2024/sample3/img3"
+    new_eval = ConductivityEval(sub_img_p)
+    new_eval.sub_img.plot_image()
+    new_eval.sub_refidx_a((50, -10), en_plot=True)
+
+    plt_show()
