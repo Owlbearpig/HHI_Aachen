@@ -70,7 +70,7 @@ def rel_meas_time(filename):
 
 def calc_phase(f_axis, data_fd):
     phi = np.unwrap(np.angle(data_fd))
-    slice_ = (0.25 < f_axis) * (f_axis < 1.0)
+    slice_ = (0.50 < f_axis) * (f_axis < 1.0)
     res = np.polyfit(f_axis[slice_], phi[slice_], 1)
 
     return phi
@@ -85,7 +85,6 @@ sam_sub_files = list((base_path_sub / "Sample").glob("*.txt"))
 ref_film_files = list((base_path_film / "Reference").glob("*.txt"))
 sam_film_files = list((base_path_film / "Sample").glob("*.txt"))
 """
-
 """
 base_path_sub = Path(r"/home/ftpuser/ftp/Data/THzConductivity/MarielenaData/2021_08_24/GaAs Wafer 25")
 base_path_film = Path(r"/home/ftpuser/ftp/Data/THzConductivity/MarielenaData/2021_08_24/GaAs_Te 19073")
@@ -95,7 +94,7 @@ sam_sub_files = list((base_path_sub / "Sample").glob("*.txt"))
 ref_film_files = list((base_path_film / "Reference").glob("*.txt"))
 sam_film_files = list((base_path_film / "Sample").glob("*.txt"))
 """
-
+"""
 base_path_sub = Path(r"/home/ftpuser/ftp/Data/THzConductivity/MarielenaData/2021_08_09/GaAs_Wafer_25")
 base_path_film = Path(r"/home/ftpuser/ftp/Data/THzConductivity/MarielenaData/2021_08_09/GaAs_C doped")
 
@@ -103,9 +102,10 @@ ref_sub_files = list((base_path_sub / "Reference").glob("*.txt"))
 sam_sub_files = list((base_path_sub / "Sample").glob("*.txt"))
 ref_film_files = list((base_path_film / "Reference").glob("*.txt"))
 sam_film_files = list((base_path_film / "Sample").glob("*.txt"))
-
 """
+
 base_path = Path(r"/home/ftpuser/ftp/Data/SemiconductorSamples/GaAaTe_wafer_sam Reameasure")
+base_path = Path(r"E:\measurementdata\THz Conductivity\SemiconductorSamples\GaAaTe_wafer19073 remeasure")
 all_files = list(base_path.glob("*.txt"))
 
 ref_sub_files, sam_sub_files, ref_film_files, sam_film_files = [], [], [], []
@@ -118,7 +118,7 @@ for file in all_files:
         ref_film_files.append(file)
     else:
         sam_film_files.append(file)
-"""
+
 """
 base_path = Path(r"/home/ftpuser/ftp/Data/SemiconductorSamples/Wafer_25_and_wafer_19073")
 all_files = list(base_path.glob("*.txt"))
@@ -180,8 +180,23 @@ scale = 1  # 1.27e3
 
 def drude(freq_axis, tau, sig0):
     sig0 *= scale
+    tau *= 1e-3
     w = 2 * np.pi * freq_axis
-    return sig0 / (1 - 1j * tau * 1e-3 * w)
+    return sig0 / (1 - 1j * tau * w)
+
+
+def lattice_contrib(freq_axis, tau, wp, eps_inf, eps_s):
+    tau *= 1e-3
+    w = 2 * np.pi * freq_axis
+    return eps_inf - (eps_s - eps_inf) * wp ** 2 / (w ** 2 - wp ** 2 + 1j * w / tau)
+
+
+def total_response(freq, tau, sig0, wp, eps_inf, eps_s):
+    sig_cc = drude(freq, tau, sig0)
+    eps_L = lattice_contrib(freq, tau, wp, eps_inf, eps_s)
+
+    w = 2 * np.pi * freq
+    return ((1 - 1e12 * w * epsilon_0 * eps_L) * 1j + 100 * sig_cc) / 100
 
 
 def rand_ints(l_):
@@ -197,13 +212,15 @@ fig, (ax0, ax1) = plt.subplots(2, 1, num="1")
 ax0.set_title("real")
 ax1.set_title("imag")
 
-ax0.set_ylim((-50, 300))
-ax1.set_ylim((-100, 100))
+#ax0.set_ylim((-50, 300))
+#ax1.set_ylim((-100, 100))
 
 chosen_idx = 4
 sigmas = []
 t = (ref_sub_files, sam_sub_files, ref_film_files, sam_film_files)
 for i, (ref_sub_file, sam_sub_file, ref_film_file, sam_film_file) in enumerate(zip(*t)):
+    if i != chosen_idx:
+        continue
     # if i not in [100, 200, 1000, 1500, 2000]:
     # print(ref_sub_file, sam_sub_file, ref_film_file, sam_film_file, sep="\n")
 
@@ -219,7 +236,7 @@ for i, (ref_sub_file, sam_sub_file, ref_film_file, sam_film_file) in enumerate(z
     ref_film_fd, sam_film_fd = fft(ref_film_td[:, 1]), fft(sam_film_td[:, 1])
 
     freq = np.fft.rfftfreq(len(ref_sub_td[:, 0]), d=0.05)
-    mask = (0.25 <= freq) * (freq < 3.0)
+    mask = (0.20 <= freq) * (freq < 3.0)
 
     phi_ref_sub = calc_phase(freq, ref_sub_fd)
     phi_sam_sub = calc_phase(freq, sam_sub_fd)
@@ -292,24 +309,30 @@ for i, (ref_sub_file, sam_sub_file, ref_film_file, sam_film_file) in enumerate(z
     ax1.plot(freq[mask], sigma_drude_fit.imag[mask], label="drude fit")
     """
 
-    # plt.semilogx(freq, drude(freq, tau=10**-5, sig0=1).real, label="drude")
-    # plt.semilogx(freq, drude(freq, tau=10**-5, sig0=1).imag, label="drude")
-
 sigmas = np.array(sigmas)
 sigma_avg = np.mean(sigmas, axis=0)
+err_r, err_i = np.std(sigmas.real, axis=0), np.std(sigmas.imag, axis=0)
 
-ax0.plot(freq[mask], sigma_avg.real[mask], label=f"average")
-ax1.plot(freq[mask], sigma_avg.imag[mask], label=f"average")
+y = sigma_avg
+ax0.plot(freq[mask], y[mask].real, label=f"average")
+ax0.fill_between(freq[mask], (y.real-err_r)[mask], (y.real+err_r)[mask])
+
+ax1.plot(freq[mask], y[mask].imag, label=f"average")
+ax1.fill_between(freq[mask], (y.imag-err_i)[mask], (y.imag+err_i)[mask])
+
+
+sigma_total = total_response(freq, tau=1000, sig0=480, wp=5, eps_inf=0, eps_s=100)
 
 def opt_fun(x):
-    real_part = (drude(freq, *x).real - sigmas[chosen_idx].real) ** 2
-    imag_part = (drude(freq, *x).imag - sigmas[chosen_idx].imag) ** 2
+    real_part = (total_response(freq, *x).real - sigma_avg.real) ** 2
+    imag_part = (total_response(freq, *x).imag - sigma_avg.imag) ** 2
 
     return np.sum(real_part[mask] + imag_part[mask]) / (len(freq[mask]) * 1000)
 
 
 logging.basicConfig(level=logging.INFO)
-opt_res = shgo(opt_fun, bounds=[(10, 300), (10, 2000)], n=2000, iters=100,
+opt_res = shgo(opt_fun, bounds=[(10, 1000), (10, 1000), (0.1, 10), (0, 200), (0, 200)],
+               n=2000, iters=100,
                minimizer_kwargs={"method": "Nelder-Mead",
                                  "options": {"maxev": np.inf, "maxiter": 40000,
                                              "tol": 1e-16, "fatol": 1e-16, "xatol": 1e-16, }
@@ -320,12 +343,12 @@ opt_res = shgo(opt_fun, bounds=[(10, 300), (10, 2000)], n=2000, iters=100,
                )
 print(opt_res)
 print(opt_fun(opt_res.x))
-print(opt_fun([111, 583]))
-sigma_drude_fit = drude(freq, *opt_res.x)
+# print(opt_fun([111, 583]))
+sigma_fit = total_response(freq, *opt_res.x)
 # freq = np.logspace(0, 10, 1000)
 
-ax0.plot(freq[mask], sigma_drude_fit.real[mask], label="drude fit new")
-ax1.plot(freq[mask], sigma_drude_fit.imag[mask], label="drude fit new")
+ax0.plot(freq[mask], sigma_fit.real[mask], label="fit new")
+ax1.plot(freq[mask], sigma_fit.imag[mask], label="fit new")
 
 sigma_drude = drude(freq, tau=95.2, sig0=520.7)
 #ax0.plot(freq[mask], sigma_drude.real[mask], label="drude")
@@ -338,5 +361,39 @@ sigma_drude = drude(freq, tau=111, sig0=583.2)
 ax0.legend()
 ax1.legend()
 
-plt.legend()
+w = 2 * np.pi * freq
+mask = w < 3
+
+sigma_total = total_response(freq, tau=1000, sig0=480, wp=5, eps_inf=0, eps_s=100)
+ax0.plot(w[mask], sigma_total[mask].real)
+ax1.plot(w[mask], sigma_total[mask].imag)
+
+"""
+eps_L = lattice_contrib(freq, tau=1000, wp=2)
+plt.figure("lattice contrib (bound cc)")
+plt.plot(w[mask], eps_L[mask].real)
+plt.plot(w[mask], eps_L[mask].imag)
+
+sigma_cc = drude(freq, tau=1000, sig0=100)
+plt.figure("drude contrib (free cc)")
+plt.plot(w[mask], sigma_cc[mask].real)
+plt.plot(w[mask], sigma_cc[mask].imag)
+
+
+sigma_total = total_response(freq, tau=1000, sig0=100, wp=2)
+plt.figure("total response")
+plt.plot(w[mask], sigma_total[mask].real)
+plt.plot(w[mask], sigma_total[mask].imag)
+
+fig, (ax0, ax1) = plt.subplots(2, 1, num="lattice contrib")
+ax0.plot(w[mask], eps_L[mask].real, label="epsilon lattice")
+ax1.plot(w[mask], eps_L[mask].imag, label="epsilon lattice")
+
+ax0.set_title("real")
+ax1.set_title("imag")
+"""
+
+ax0.legend()
+ax1.legend()
+
 plt.show()
